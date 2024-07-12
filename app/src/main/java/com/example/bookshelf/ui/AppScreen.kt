@@ -2,6 +2,7 @@ package com.example.bookshelf.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -10,8 +11,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.foundation.lazy.grid.LazyGridItemScope
+import androidx.compose.foundation.lazy.grid.LazyGridScope
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -30,7 +33,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -48,14 +50,16 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.example.bookshelf.model.Book
-import com.example.bookshelf.model.ImageLinks
 import com.example.bookshelf.model.VolumeInfo
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -116,7 +120,9 @@ fun BookAppView(
             is BookShelfUiState.Success -> {
                 HomeScreen(
                     bookList = appUiState.bookList,
-                    modifier = Modifier.padding(innerPadding)
+                    modifier = Modifier.padding(innerPadding),
+                    totalItem = appUiState.totalItem,
+                    querySearch = viewModel.querySearch.replace("+", " ")
                 )
                 if(viewModel.openSearchDialog) {
                     QueryInputDialog(
@@ -167,7 +173,7 @@ private fun QueryInputDialog(
         },
         title = {
             Text(
-                "Search Anything",
+                "Input Anything.",
                 style = MaterialTheme.typography.headlineSmall,
                 modifier = Modifier.fillMaxWidth(),
                 textAlign = TextAlign.Center
@@ -194,11 +200,22 @@ private fun QueryInputDialog(
 fun HomeScreen(
     modifier: Modifier = Modifier,
     bookList: List<Book>,
+    querySearch: String,
+    totalItem: Int
 ) {
     LazyVerticalGrid(
-        modifier = modifier,
+        modifier = modifier.padding(top = 8.dp),
         columns = GridCells.Adaptive(minSize = 124.dp)
     ) {
+        header {
+            QueryTextResult(
+                modifier = Modifier
+                    .padding(bottom = 12.dp, top = 4.dp)
+                    .width(300.dp),
+                querySearch = querySearch,
+                totalItem = totalItem
+            )
+        }
         items(bookList) {book ->
             BookItem(
                 bookInfo = book.volumeInfo,
@@ -208,6 +225,11 @@ fun HomeScreen(
 
         }
     }
+}
+fun LazyGridScope.header(
+    content: @Composable LazyGridItemScope.() -> Unit
+) {
+    item(span = { GridItemSpan(this.maxLineSpan) }, content = content)
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -261,23 +283,53 @@ private fun BookItem(
    }
 }
 
-@Preview(showBackground = true, widthDp = 300, heightDp = 500)
 @Composable
-private fun BookItemPreview() {
-    val bookItem = VolumeInfo(
-        title = "The History of Jazz",
-        authors = listOf("Ted Giola"),
-        publisher = "Oxford University Press, USA",
-        publishedDate = "1997-11-20",
-        description = "Jazz is the most colorful and varied art form in the world and it was born in one of the most colorful and varied cities, New Orleans. From the seed first planted by slave dances held in Congo Square and nurtured by early ensembles led by Buddy Belden and Joe \\\"King\\\" Oliver, jazz began its long winding odyssey across America and around the world, giving flower to a thousand different forms--swing, bebop, cool jazz, jazz-rock fusion--and a thousand great musicians. Now, in The History of Jazz, Ted Gioia tells the story of this music as it has never been told before, in a book that brilliantly portrays the legendary jazz players, the breakthrough styles, and the world in which it evolved. Here are the giants of jazz and the great moments of jazz history--Jelly Roll Morton (\\\"the world's greatest hot tune writer\\\"), Louis Armstrong (whose O-keh recordings of the mid-1920s still stand as the most significant body of work that jazz has produced), Duke Ellington at the Cotton Club, cool jazz greats such as Gerry Mulligan, Stan Getz, and Lester Young, Charlie Parker's surgical precision of attack, Miles Davis's 1955 performance at the Newport Jazz Festival, Ornette Coleman's experiments with atonality, Pat Metheny's visionary extension of jazz-rock fusion, the contemporary sounds of Wynton Marsalis, and the post-modernists of the Knitting Factory. Gioia provides the reader with lively portraits of these and many other great musicians, intertwined with vibrant commentary on the music they created. Gioia also evokes the many worlds of jazz, taking the reader to the swamp lands of the Mississippi Delta, the bawdy houses of New Orleans, the rent parties of Harlem, the speakeasies of Chicago during the Jazz Age, the after hours spots of corrupt Kansas city, the Cotton Club, the Savoy, and the other locales where the history of jazz was made. And as he traces the spread of this protean form, Gioia provides much insight into the social context in which the music was born. He shows for instance how the development of technology helped promote the growth of jazz--how ragtime blossomed hand-in-hand with the spread of parlor and player pianos, and how jazz rode the growing popularity of the record industry in the 1920s. We also discover how bebop grew out of the racial unrest of the 1940s and '50s, when black players, no longer content with being \\\"entertainers,\\\" wanted to be recognized as practitioners of a serious musical form. Jazz is a chameleon art, delighting us with the ease and rapidity with which it changes colors. Now, in Ted Gioia's The History of Jazz, we have at last a book that captures all these colors on one glorious palate. Knowledgeable, vibrant, and comprehensive, it is among the small group of books that can truly be called classics of jazz literature.",
-        imageLinks = ImageLinks(thumbnail = "https://books.google.com/books/content?id=C1MI_4nZyD4C&printsec=frontcover&img=1&zoom=1&edge=curl&imgtk=AFLRE70l8NsOiCS9UsvAO_0FZGJJtzRtNxl_4p-G3zrTMoTs8kKdAHiMXocWhj9cmW5MfGJtB63evIBDn4oLD6An91pMZ55caCELHOiLxic_w8bvAAt0xYiCIC2WKf2jpUa3CysBGkhO&source=gbs_api"
-        )
+private fun QueryTextResult(
+    modifier: Modifier = Modifier,
+    querySearch: String = "Jazz History",
+    totalItem: Int = 389
+) {
+    val sourceText = "Total Item $totalItem shows 40"
+    val detailText = textHighlightGenerator(
+        sourceText,
+        listOf(totalItem.toString(), "40")
     )
-    Surface(
-        modifier = Modifier
-            .fillMaxSize()
-            .wrapContentSize()
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 8.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        BookItem(bookInfo = bookItem, onClick = {})
+        Text(
+            "\"$querySearch\"",
+            style = MaterialTheme.typography.headlineMedium
+            )
+        Text(detailText)
     }
+}
+
+
+private fun textHighlightGenerator(
+    source: String,
+    segments: List<String>
+) :AnnotatedString {
+    val builder = AnnotatedString.Builder()
+    val highlightStyle = SpanStyle(
+        fontWeight = FontWeight.Medium,
+        fontSize = 18.sp,
+    )
+    val normalStyle = SpanStyle(
+        fontWeight = FontWeight.Medium,
+        fontSize = 16.sp
+    )
+    builder.append(source)
+    builder.addStyle(normalStyle, 0, source.length)
+
+    segments.forEach { segment ->
+        val start = source.indexOf(segment)
+        val end = start + segment.length
+        builder.addStyle(highlightStyle, start, end)
+    }
+
+    return builder.toAnnotatedString()
 }

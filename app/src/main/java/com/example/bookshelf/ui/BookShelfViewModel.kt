@@ -18,6 +18,7 @@ import java.io.IOException
 
 sealed interface BookShelfUiState {
     data class Success(
+        val totalItem: Int,
         val bookList: List<Book>
     ): BookShelfUiState
     data object Loading: BookShelfUiState
@@ -31,7 +32,8 @@ class BookShelfViewModel(
         private set
 
     private var bookAscendSorted: Boolean by mutableStateOf(false)
-    private var querySearch: String by mutableStateOf("jazz+history")
+    var querySearch: String by mutableStateOf("jazz+history")
+        private set
     var openSearchDialog: Boolean by mutableStateOf(false)
 
 
@@ -44,7 +46,11 @@ class BookShelfViewModel(
         viewModelScope.launch {
             appUiState = BookShelfUiState.Loading
             appUiState = try {
-                BookShelfUiState.Success(bookShelfRepository.getBookList(querySearch).items)
+                val result = bookShelfRepository.getBookList(querySearch)
+                BookShelfUiState.Success(
+                    bookList = result.items,
+                    totalItem = result.totalItems
+                )
             } catch (e: HttpException) {
                 BookShelfUiState.Error
             } catch (e: IOException) {
@@ -62,11 +68,11 @@ class BookShelfViewModel(
         if (books != null) {
             if(!bookAscendSorted) {
                 val ascendBooks: List<Book> = books.sortedBy { it.volumeInfo.title }
-                appUiState = BookShelfUiState.Success(ascendBooks)
+                appUiState = (appUiState as BookShelfUiState.Success).copy(bookList = ascendBooks)
                 bookAscendSorted = true
             } else {
                 val descendBooks: List<Book> = books.sortedByDescending { it.volumeInfo.title }
-                appUiState = BookShelfUiState.Success(descendBooks)
+                appUiState = (appUiState as BookShelfUiState.Success).copy(bookList = descendBooks)
                 bookAscendSorted = false
             }
         }
