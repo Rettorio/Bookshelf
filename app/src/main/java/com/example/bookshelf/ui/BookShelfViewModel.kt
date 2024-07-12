@@ -17,7 +17,9 @@ import retrofit2.HttpException
 import java.io.IOException
 
 sealed interface BookShelfUiState {
-    data class Success(val bookList: List<Book>): BookShelfUiState
+    data class Success(
+        val bookList: List<Book>
+    ): BookShelfUiState
     data object Loading: BookShelfUiState
     data object Error : BookShelfUiState
 }
@@ -29,17 +31,20 @@ class BookShelfViewModel(
         private set
 
     private var bookAscendSorted: Boolean by mutableStateOf(false)
+    private var querySearch: String by mutableStateOf("jazz+history")
+    var openSearchDialog: Boolean by mutableStateOf(false)
 
 
     init {
         getBookList()
     }
 
+
     private fun getBookList() {
         viewModelScope.launch {
             appUiState = BookShelfUiState.Loading
             appUiState = try {
-                BookShelfUiState.Success(bookShelfRepository.getBookList().items)
+                BookShelfUiState.Success(bookShelfRepository.getBookList(querySearch).items)
             } catch (e: HttpException) {
                 BookShelfUiState.Error
             } catch (e: IOException) {
@@ -65,6 +70,12 @@ class BookShelfViewModel(
                 bookAscendSorted = false
             }
         }
+    }
+
+    fun searchBook(query: String) {
+        querySearch = query.replace(" ", "+")
+        openSearchDialog = false
+        getBookList()
     }
 
     companion object {

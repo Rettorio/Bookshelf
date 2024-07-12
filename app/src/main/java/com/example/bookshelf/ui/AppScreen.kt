@@ -15,23 +15,32 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Sort
 import androidx.compose.material.icons.filled.TravelExplore
 import androidx.compose.material.icons.outlined.LocalLibrary
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
@@ -39,6 +48,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
@@ -89,7 +100,7 @@ fun BookAppView(
             AppTopBar(
                 scrollBehavior,
                 { viewModel.sortBookList() },
-                {}
+                { viewModel.openSearchDialog = true }
             )
         }
     ) {innerPadding ->
@@ -102,7 +113,18 @@ fun BookAppView(
                 .padding(innerPadding)
                 .fillMaxWidth()
                 .fillMaxHeight(.5f))
-            is BookShelfUiState.Success -> HomeScreen(bookList = appUiState.bookList, modifier = Modifier.padding(innerPadding))
+            is BookShelfUiState.Success -> {
+                HomeScreen(
+                    bookList = appUiState.bookList,
+                    modifier = Modifier.padding(innerPadding)
+                )
+                if(viewModel.openSearchDialog) {
+                    QueryInputDialog(
+                        onSave = { x: String -> viewModel.searchBook(x) },
+                        onCancel = { viewModel.openSearchDialog = false }
+                    )
+                }
+            }
         }
     }
 
@@ -123,9 +145,55 @@ private fun ErrorScreen(modifier: Modifier) {
 }
 
 @Composable
+private fun QueryInputDialog(
+    onSave: (String) -> Unit,
+    onCancel: () -> Unit
+) {
+    var searchQuery: String by remember { mutableStateOf("") }
+    AlertDialog(
+        onDismissRequest = onCancel,
+        confirmButton = {
+            TextButton(
+                onClick = { onSave(searchQuery) },
+                enabled = searchQuery.isNotEmpty()
+            ) {
+                Text("Search")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick =  onCancel ) {
+                Text("Cancel")
+            }
+        },
+        title = {
+            Text(
+                "Search Anything",
+                style = MaterialTheme.typography.headlineSmall,
+                modifier = Modifier.fillMaxWidth(),
+                textAlign = TextAlign.Center
+            )
+        },
+        text = {
+            OutlinedTextField(
+                value = searchQuery,
+                onValueChange = { searchQuery = it },
+                modifier = Modifier.fillMaxWidth(),
+                label = {
+                        Text("title,genres,author,etc")
+                },
+                keyboardActions = KeyboardActions(onSearch = { onSave(searchQuery) } ),
+                keyboardOptions = KeyboardOptions(
+                    imeAction = ImeAction.Search
+                )
+            )
+        }
+    )
+}
+
+@Composable
 fun HomeScreen(
     modifier: Modifier = Modifier,
-    bookList: List<Book>
+    bookList: List<Book>,
 ) {
     LazyVerticalGrid(
         modifier = modifier,
