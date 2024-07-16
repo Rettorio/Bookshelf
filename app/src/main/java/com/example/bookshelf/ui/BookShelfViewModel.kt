@@ -42,7 +42,7 @@ class BookShelfViewModel(
     }
 
 
-    private fun getBookList() {
+    fun getBookList() {
         viewModelScope.launch {
             appUiState = BookShelfUiState.Loading
             appUiState = try {
