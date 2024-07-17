@@ -27,6 +27,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Sort
 import androidx.compose.material.icons.filled.TravelExplore
 import androidx.compose.material.icons.outlined.LocalLibrary
+import androidx.compose.material.icons.outlined.Plagiarism
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -142,7 +143,8 @@ fun BookShelfScreen(
                 if(viewModel.openSearchDialog) {
                     QueryInputDialog(
                         onSave = { viewModel.searchBook(it) },
-                        onCancel = { viewModel.openSearchDialog = false }
+                        onCancel = { viewModel.openSearchDialog = false },
+                        defaultQuery = viewModel.querySearch
                     )
                 }
             }
@@ -296,14 +298,20 @@ private fun BookItem(
 @Composable
 private fun QueryInputDialog(
     onSave: (String) -> Unit,
-    onCancel: () -> Unit
+    onCancel: () -> Unit,
+    defaultQuery: String
 ) {
-    var searchQuery: String by remember { mutableStateOf("") }
+    var searchQuery: String by remember { mutableStateOf(defaultQuery.replace("+", " ")) }
     AlertDialog(
         onDismissRequest = onCancel,
+        icon = {
+          Box(modifier = Modifier.size(24.dp)) {
+              Icon(Icons.Outlined.Plagiarism, null, modifier = Modifier.fillMaxSize())
+          }
+        },
         confirmButton = {
             TextButton(
-                onClick = { onSave(searchQuery) },
+                onClick = { onSave(searchQuery.replace(" ", "+")) },
                 enabled = searchQuery.isNotEmpty()
             ) {
                 Text("Search")

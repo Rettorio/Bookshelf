@@ -79,7 +79,7 @@ class BookShelfViewModel(
     }
 
     fun searchBook(query: String) {
-        querySearch = query.replace(" ", "+")
+        querySearch = query
         openSearchDialog = false
         getBookList()
     }

@@ -43,7 +43,8 @@ fun BookAppView() {
                 publishedDate = args.publishedDate,
                 publisher = args.publisher,
                 description = args.description,
-                categories = args.categories
+                categories = args.categories,
+                onSearchCategory = {x -> viewModel.searchBook(x) }
             )
         }
     }

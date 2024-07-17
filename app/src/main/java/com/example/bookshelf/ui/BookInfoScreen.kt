@@ -1,6 +1,8 @@
 package com.example.bookshelf.ui
 
+import android.annotation.SuppressLint
 import android.util.Log
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -29,11 +31,15 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.RichTooltipBox
+import androidx.compose.material3.RichTooltipState
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -44,6 +50,7 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.example.bookshelf.navigation.LocalNavController
 import com.example.bookshelf.ui.theme.surfaceContainer
+import kotlinx.coroutines.launch
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -71,7 +78,8 @@ fun BookInfoScreen(
     publisher: String?,
     description: String?,
     thumbnail: String?,
-    categories: List<String>?
+    categories: List<String>?,
+    onSearchCategory: (String) -> Unit
 ) {
     val navController = LocalNavController.current
     val titleWordCounter = title.toList().size
@@ -111,7 +119,11 @@ fun BookInfoScreen(
             }
             if (categories != null) {
                 Spacer(Modifier.height(16.dp))
-                ShowCategories(categories)
+                ShowCategories(
+                    categories = categories,
+                    onSearchCategory = onSearchCategory,
+                    backToHome = { navController.navigateUp() }
+                )
             }
             Spacer(Modifier.height(16.dp))
             Card(
@@ -186,19 +198,50 @@ private fun ShowAttribute(
     }
 }
 
-@OptIn(ExperimentalLayoutApi::class)
+@SuppressLint("RememberReturnType")
+@OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
 private fun ShowCategories(
-    categories: List<String>
+    categories: List<String>,
+    onSearchCategory: (String) -> Unit,
+    backToHome: () -> Unit
 ) {
+    val tooltipState = remember { RichTooltipState() }
+    val scope = rememberCoroutineScope()
+
     FlowRow(
         modifier = Modifier.fillMaxWidth()
     ) {
         categories.forEach { category ->
-            SuggestionChip(
-                onClick = { /*TODO*/ },
-                label = { Text(category) }
-            )
+            val searchString = "subject:" + cleanCategoryText(category)
+
+            RichTooltipBox(
+                text = {
+                    Text(
+                        "Search this category",
+                        modifier = Modifier
+                            .padding(4.dp)
+                            .clickable {
+                            scope.launch { tooltipState.dismiss() }
+                            onSearchCategory(searchString)
+                            backToHome()
+                        }
+                    )
+                },
+                tooltipState = tooltipState
+            ) {
+                SuggestionChip(
+                    onClick = { scope.launch { tooltipState.show() } },
+                    label = { Text(category) }
+                )
+            }
         }
     }
+
+}
+
+
+private fun cleanCategoryText(text: String): String {
+    val regex = "[\\s,!&]+".toRegex() // Regular expression for delimiters
+    return text.trim().split(regex).joinToString("+")
 }
