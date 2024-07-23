@@ -1,5 +1,7 @@
 package com.example.bookshelf.ui
 
+import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.core.tween
 import androidx.compose.runtime.Composable
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
@@ -29,12 +31,34 @@ fun BookAppView() {
     val navController = LocalNavController.current
     val viewModel: BookShelfViewModel = viewModel(factory = BookShelfViewModel.factory)
     NavHost(navController = navController, startDestination = HomeScreen) {
-        composable<HomeScreen> {
+        composable<HomeScreen>(
+            exitTransition = {
+                return@composable slideOutOfContainer(
+                    AnimatedContentTransitionScope.SlideDirection.Left, tween(400)
+                )
+            },
+            popEnterTransition = {
+                return@composable slideIntoContainer(
+                    AnimatedContentTransitionScope.SlideDirection.Right, tween(400)
+                )
+            }
+        ) {
             BookShelfScreen(
                 viewModel = viewModel
             )
         }
-        composable<BookDetail> {
+        composable<BookDetail>(
+            enterTransition = {
+                return@composable slideIntoContainer(
+                    AnimatedContentTransitionScope.SlideDirection.Left, tween(400)
+                )
+            },
+            popExitTransition = {
+                return@composable slideOutOfContainer(
+                    AnimatedContentTransitionScope.SlideDirection.Right, tween(400)
+                )
+            }
+        ) {
             val args = it.toRoute<BookDetail>()
             BookInfoScreen(
                 title = args.title,
